@@ -1,2 +1,2 @@
-model_checkpoint_path: "class_e15_b20"
-all_model_checkpoint_paths: "class_e15_b20"
+model_checkpoint_path: "class_ATTC_e15_b20"
+all_model_checkpoint_paths: "class_ATTC_e15_b20"

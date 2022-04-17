@@ -67,30 +67,100 @@ import keras
 
 from keras.layers import Dense, Input, GlobalMaxPooling1D, Reshape, LSTM, Activation, GRU
 from keras.layers import Conv1D, MaxPooling1D, Embedding, Concatenate, AveragePooling1D
-from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Flatten
-from keras.layers import GlobalMaxPooling2D, Conv3D, MaxPooling3D, ConvLSTM2D, Add
+from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Flatten, Layer
+from keras.layers import GlobalMaxPooling2D, Conv3D, MaxPooling3D, ConvLSTM2D, Add, Multiply
 from keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from keras.initializers import Constant
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 import tensorflow as tf
 
+
+import keras.backend as K
+
+class WeightedPoolingRNN(Layer):
+    def __init__(self, **kwargs):
+        Layer.__init__(self, **kwargs)
+
+    def build(self, input_shape):
+        self.W=self.add_weight(name='attention_weight', shape=(input_shape[-1],1), 
+                               initializer='random_normal', trainable=True)
+        self.b=self.add_weight(name='attention_bias', shape=(input_shape[1],1), 
+                               initializer='zeros', trainable=True)        
+        # super(attention, self).build(input_shape)
+        Layer.build(self, input_shape)
+
+    def call(self, x):
+
+        e = K.tanh(K.dot(x,self.W)+self.b)
+        # Remove dimension of size 1
+        e = K.squeeze(e, axis=-1)   
+        # Compute the weights
+        alpha = K.softmax(e)
+        # Reshape to tensorFlow format
+        alpha = K.expand_dims(alpha, axis=-1)
+        # Compute the context vector
+        context = x * alpha
+        context = K.sum(context, axis=1)
+        return context
+
+
+class WeightedPoolingCNN(Layer):
+    def __init__(self, **kwargs):
+        Layer.__init__(self, **kwargs)
+
+    def build(self, input_shape):
+        self.W=self.add_weight(name='attention_weight', shape=(input_shape[-1],1), 
+                               initializer='random_normal', trainable=True)
+        self.b=self.add_weight(name='attention_bias', shape=(input_shape[1],1), 
+                               initializer='zeros', trainable=True)        
+        # super(attention, self).build(input_shape)
+        Layer.build(self, input_shape)
+
+    def call(self, x, y):
+
+        e = K.tanh(K.dot(y,self.W)+self.b)
+        # Remove dimension of size 1
+        e = K.squeeze(e, axis=-1)   
+        # Compute the weights
+        alpha = K.softmax(e)
+        # Reshape to tensorFlow format
+        alpha = K.expand_dims(alpha, axis=-1)
+        # Compute the context vector
+        context = x * alpha
+        context = K.sum(context, axis=1)
+        return context
+
+
+
 class CRDNN(keras.Model):
-    def __init__(self,):
+    def __init__(self, ATT="ATTNO"):
         super().__init__()
+        self.ATT = ATT
+        
         # CNN
-        self.conv1 = Conv1D(L, kernel_size=8)
+        self.conv1 = Conv1D(128, kernel_size=8)
         self.maxpooling1 = MaxPooling1D(3)
         self.activation1 = Activation('relu')
         self.bn1 = BatchNormalization()
+        
         # RNN
         self.gru1 = GRU(128, return_sequences=True)
-        self.gru2 = GRU(L,return_sequences=True)
-        # Pooling
-        self.mean1 = AveragePooling1D()
-        self.flatten = Flatten()
+        self.gru2 = GRU(128,return_sequences=True)
+        
+        # Attention mechanism
+        self.pool1 = AveragePooling1D(strides=L)
+        self.pool2 = WeightedPoolingRNN()
+        self.pool3 = WeightedPoolingCNN()
+        # self.weightedpooling = 
+        
+        # self.attention_probs = Dense(self.gru2.shape, activation='softmax')
+        # self.attention_mul = Multiply([self.gru2, self.attention_probs])
+        
         # FC
-        self.dense1 = Dense(2)
+        self.dense1 = Dense(128)
+        self.dense2 = Dense(512)
+        self.dense3 = Dense(1)
 
     def call(self, inputs):
         x = self.conv1(inputs)
@@ -99,13 +169,23 @@ class CRDNN(keras.Model):
         f = self.bn1(x)
         h = self.gru1(f)
         h = self.gru2(h)
-        z = self.mean1(h)
-        z = self.flatten(z)
-        output = self.dense1(z)
+        
+        if self.ATT == "ATTNO":
+            z = self.pool1(h)
+            print("z's shape:", z.shape)
+        elif self.ATT == "ATTR":
+            z = self.pool2(h)
+        elif self.ATT == "ATTC":
+            z = self.pool3(h,f)
+        
+        z = self.dense1(z)
+        z = self.dense2(z)
+        output = self.dense3(z)
 
         return output
 
-model = CRDNN()
+ATT = "ATTC"
+model = CRDNN(ATT=ATT)
 model.build(input_shape)
 
 # Model Compile
@@ -132,6 +212,7 @@ def ccc(y_true, y_pred):
     '''
     
     import keras.backend as K 
+    
     # covariance between y_true and y_pred
     N = K.int_shape(y_pred)[-1]
     s_xy = 1.0 / (N - 1.0 + K.epsilon()) * K.sum((y_true - K.mean(y_true)) * (y_pred - K.mean(y_pred)))
@@ -156,11 +237,11 @@ early_stop = EarlyStopping(monitor = 'loss', min_delta = 0.001, patience = 10, m
 #########
 import random
 
-model_path = "model/" + audio_file.split("/")[-1].split(".")[0] + "_e{}_b{}".format(str(15), str(20))
+model_path = "model/" + audio_file.split("/")[-1].split(".")[0] + "_{}_e{}_b{}".format(ATT, str(15), str(20))
 
 if MODE == "TRAIN":
     model.summary()
-    labels = np.array([(random.randint(-2,2), random.randint(-2,2)) for _ in range(60)], dtype=np.float32)
+    labels = np.array([random.randint(-2,2) for _ in range(60)], dtype=np.float32)
     model.fit(LLDs, labels, epochs = 15, batch_size=20, callbacks = [early_stop])
     model.save_weights(model_path)
     print("Model saved at {} ...".format(model_path))
@@ -176,3 +257,7 @@ elif MODE == "TEST":
 
     prediction = model.predict(new_input)
     print("Affection Prediction:", prediction[0])
+
+
+# Effective Python
+# Tensorboard
