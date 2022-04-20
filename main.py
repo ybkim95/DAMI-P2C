@@ -110,9 +110,9 @@ class WeightedPoolingCNN(Layer):
         Layer.__init__(self, **kwargs)
 
     def build(self, input_shape):
-        self.W=self.add_weight(name='attention_weight', shape=(input_shape[-1],1), 
+        self.W=self.add_weight(name='weight', shape=(input_shape[-1],1), 
                                initializer='random_normal', trainable=True)
-        self.b=self.add_weight(name='attention_bias', shape=(input_shape[1],1), 
+        self.b=self.add_weight(name='bias', shape=(input_shape[1],1), 
                                initializer='zeros', trainable=True)        
         # super(attention, self).build(input_shape)
         Layer.build(self, input_shape)
