@@ -4,7 +4,7 @@ Reproducing Huili, et. al., ACM 2020's "Dyadic Speech-based Affect Recognition u
 ## How to run
 Run `python3 main.py`.
 
-## Preview
+## Model
 ![result](https://github.com/ybkim95/DAMI-P2C/blob/main/img/result.png)
 
 ## References
