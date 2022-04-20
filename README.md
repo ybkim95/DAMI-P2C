@@ -7,8 +7,6 @@ Run `python3 main.py`.
 ## Preview
 ![result](https://github.com/ybkim95/DAMI-P2C/blob/main/img/result.png)
 
-![result](https://github.com/ybkim95/DAMI-P2C/blob/main/img/result1.png)
-
 ![result](https://github.com/ybkim95/DAMI-P2C/blob/main/img/result2.png)
 
 ## References
