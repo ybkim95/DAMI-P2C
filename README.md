@@ -1,5 +1,5 @@
 # DAMI-P2C
-Reproducing Huili, et. al., ACM 2020's "Dyadic Speech-based Affect Recognition using DAMI-P2C Parent-child Multimodal Interaction Dataset." in Keras.
+Reproducing Huili, et. al., ACM 2020's [paper](https://dl.acm.org/doi/10.1145/3382507.3418842) "Dyadic Speech-based Affect Recognition using DAMI-P2C Parent-child Multimodal Interaction Dataset." in Keras.
 <br><br>
 
 
