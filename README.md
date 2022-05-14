@@ -7,12 +7,11 @@ Reproducing Huili, et. al., ACM 2020's [paper](https://dl.acm.org/doi/10.1145/33
 Run `python3 main.py`.
 <br><br>
 
-## CRDNN Model and prediction result
+## CRDNN Model
 ![result](https://github.com/ybkim95/DAMI-P2C/blob/main/img/result.png)
 
-![result](https://github.com/ybkim95/DAMI-P2C/blob/main/img/result2.png)
+![image](https://user-images.githubusercontent.com/45308022/168441044-be86d9da-9d6a-4ee3-b33f-557e79213545.png)
 
-Predicted value must lie on [-5,5]
 <br><br>
 
 ## References
